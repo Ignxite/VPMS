@@ -79,7 +79,7 @@ function App() {
   };
 
   const triggerExport = () => {
-    window.riosExportModel?.("glb");
+    window.VPMSExportModel?.("glb");
   };
 
   const getFleetSpaces = async () => {
@@ -96,7 +96,7 @@ function App() {
   const putGlbOnFleetSpace = (spaceId: string) => {
     setFleet(spaceId, "fleet");
     setExportType("fleet");
-    window.riosExportModel?.("fleet");
+    window.VPMSExportModel?.("fleet");
   };
 
   const loadFleetSpace = () => {

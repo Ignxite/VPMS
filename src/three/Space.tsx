@@ -946,12 +946,12 @@ export function Export() {
   const getActionState = useActionStore.getState;
 
   useEffect(() => {
-    window.riosExportModel = (mode: "glb" | "fleet") => {
+    window.VPMSExportModel = (mode: "glb" | "fleet") => {
       exportGLB(mode);
     };
 
     return () => {
-      window.riosExportModel = undefined;
+      window.VPMSExportModel = undefined;
     };
   }, [scene]);
 

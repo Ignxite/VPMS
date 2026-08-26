@@ -94,7 +94,7 @@ export function TopNav({ step }: { step: number }) {
               lineHeight: 1.1,
             })}
           >
-            Rios
+            VPMS
           </div>
           <div
             css={css({
@@ -187,7 +187,7 @@ export function TopNav({ step }: { step: number }) {
       >
         <NavButton
           isShow={true}
-          onClick={() => window.open("https://github.com/Invariants0/rios")}
+          onClick={() => window.open("https://github.com/Invariants0/VPMS")}
         >
           <Github size={14} />
           GitHub

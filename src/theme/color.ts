@@ -1,4 +1,4 @@
-/** Rios design tokens */
+/** VPMS design tokens */
 
 // Backgrounds
 export const BG_PRIMARY = "#f6f7fb";

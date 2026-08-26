@@ -9,6 +9,6 @@ declare global {
   }
 
   interface Window {
-    riosExportModel?: (mode: "glb" | "fleet") => void;
+    VPMSExportModel?: (mode: "glb" | "fleet") => void;
   }
 }
