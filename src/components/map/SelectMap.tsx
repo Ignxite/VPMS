@@ -32,6 +32,46 @@ function FlyToLocation({
   return null;
 }
 
+function CenterReadout() {
+  const [center, setCenter] = useState<{ lat: number; lng: number } | null>(
+    null
+  );
+
+  const map = useMapEvents({
+    move() {
+      const c = map.getCenter();
+      setCenter({ lat: c.lat, lng: c.lng });
+    },
+  });
+
+  useEffect(() => {
+    const c = map.getCenter();
+    setCenter({ lat: c.lat, lng: c.lng });
+  }, [map]);
+
+  if (!center) return null;
+
+  return (
+    <div
+      css={css({
+        position: "absolute",
+        zIndex: 1000,
+        left: "1rem",
+        bottom: "1rem",
+        background: "rgba(255,255,255,0.85)",
+        padding: "0.4rem 0.7rem",
+        borderRadius: "8px",
+        fontSize: "0.75rem",
+        fontFamily: "monospace",
+        color: "#111827",
+        pointerEvents: "none",
+      })}
+    >
+      {center.lat.toFixed(5)}, {center.lng.toFixed(5)}
+    </div>
+  );
+}
+
 function RectangleSelector({
   isDrag = true,
   drawBounds,
@@ -140,10 +180,12 @@ export function MapComponent({
   onRemove,
   onDone,
   flyTarget,
+  resetKey,
 }: {
   onDone: (e: { lat: number; lng: number }[]) => void;
   onRemove: () => void;
   flyTarget: { lat: number; lng: number } | null;
+  resetKey?: number;
 }) {
   const [isDrag, setIsDrag] = useState(true);
   const [bounds, setBounds] = useState<LatLngBounds | null>(null);
@@ -169,6 +211,15 @@ export function MapComponent({
     setDrawBounds(e);
     onDone([e.getNorthEast(), e.getSouthWest()]);
   };
+
+  useEffect(() => {
+    // External reset requested: clear internal selection state
+    if (typeof resetKey !== "undefined") {
+      setBounds(null);
+      setDrawBounds(null);
+      setIsDrag(true);
+    }
+  }, [resetKey]);
 
   return (
     <div
@@ -254,7 +305,7 @@ export function MapComponent({
       </div>
 
       <MapContainer
-        center={[40.8, -73.95]}
+        center={[28.6139, 77.2090]}
         zoom={13}
         minZoom={2}
         maxZoom={19}
@@ -274,6 +325,7 @@ export function MapComponent({
           onDrawChange={handleChangeDraw}
         />
         <FlyToLocation position={flyTarget} />
+        <CenterReadout />
       </MapContainer>
     </div>
   );

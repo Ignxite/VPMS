@@ -62,6 +62,7 @@ function App() {
   const [buildings, setBuildings] = useState<Building[]>([]);
   const [isFetchingBuildings, setIsFetchingBuildings] = useState(false);
   const [hasFetchedBuildings, setHasFetchedBuildings] = useState(false);
+  const [resetKey, setResetKey] = useState(0);
 
   const setCenter = useAreaStore((state) => state.setCenter);
   const appendAreas = useAreaStore((state) => state.appendAreas);
@@ -128,6 +129,13 @@ function App() {
     setIsNextButtonDisabled(true);
     setBuildings([]);
     setHasFetchedBuildings(false);
+  };
+
+  const handleResetDemo = () => {
+    // Clear app-level selection and notify MapComponent via resetKey
+    handleRemove();
+    setStep(0);
+    setResetKey((k) => k + 1);
   };
 
   const requestBuildings = async () => {
@@ -204,7 +212,7 @@ function App() {
         overflow: "hidden",
       })}
     >
-      <TopNav step={step} onResetDemo={handleRemove} />
+      <TopNav step={step} onResetDemo={handleResetDemo} />
 
       {/* Step 0: Map Selection */}
       <FullscreenModal isOpen={STEPS[step] === "front"}>
@@ -223,6 +231,7 @@ function App() {
             onRemove={handleRemove}
             onDone={handleDone}
             flyTarget={selectedLocation}
+            resetKey={resetKey}
           />
 
           <div
