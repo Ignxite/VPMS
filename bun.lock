@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "rios",
+      "name": "VPMS",
       "dependencies": {
         "@emotion/react": "^11.14.0",
         "@react-three/drei": "^10.0.2",
