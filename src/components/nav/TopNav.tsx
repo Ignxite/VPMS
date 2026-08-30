@@ -11,7 +11,7 @@ import { css } from "@emotion/react";
 import { DetailedHTMLProps, ButtonHTMLAttributes } from "react";
 import {
   CarFront,
-  Github,
+  RotateCcw,
   Layers3,
   Sparkles,
   SquareDashedMousePointer,
@@ -31,7 +31,13 @@ interface NavButtonProps
   isShow?: boolean;
 }
 
-export function TopNav({ step }: { step: number }) {
+export function TopNav({
+  step,
+  onResetDemo,
+}: {
+  step: number;
+  onResetDemo?: () => void;
+}) {
   const setThirdMode = useCarStore((state) => state.setThirdMode);
   const thirdMode = useCarStore((state) => state.thirdMode);
   const isMobile = /Mobi|Android/i.test(navigator.userAgent);
@@ -185,12 +191,9 @@ export function TopNav({ step }: { step: number }) {
           justifyContent: "flex-end",
         })}
       >
-        <NavButton
-          isShow={true}
-          onClick={() => window.open("https://github.com/Invariants0/VPMS")}
-        >
-          <Github size={14} />
-          GitHub
+        <NavButton isShow={true} onClick={() => onResetDemo?.()}>
+          <RotateCcw size={14} />
+          Reset Demo
         </NavButton>
 
         {!isMobile && (

@@ -204,7 +204,7 @@ function App() {
         overflow: "hidden",
       })}
     >
-      <TopNav step={step} />
+      <TopNav step={step} onResetDemo={handleRemove} />
 
       {/* Step 0: Map Selection */}
       <FullscreenModal isOpen={STEPS[step] === "front"}>
