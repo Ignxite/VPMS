@@ -13,6 +13,7 @@
     "@emotion/react": "^11.14.0",
     "@react-three/drei": "^10.0.2",
     "@react-three/fiber": "^9.0.4",
+    "@supabase/supabase-js": "^2.112.4",
     "@types/three": "^0.173.0",
     "axios": "^1.7.9",
     "leaflet": "^1.9.4",

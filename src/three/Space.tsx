@@ -9,6 +9,13 @@ import Car from "./Car";
 import instanceFleet from "@/api/axios";
 import { create } from "zustand";
 import {
+  getOrCreateBuilding,
+  getOrCreateFloors,
+  getOrCreateParcel,
+} from "@/api/supabase";
+import { generateBaseUlpin } from "@/utils/ulpin";
+import { checkHeightFloorMismatch } from "@/utils/validation";
+import {
   ANNOTATION_COLORS,
   BuildingAnnotationColor,
   useBuildingAnnotationStore,
@@ -87,6 +94,8 @@ interface BuildingProps {
   tags: Record<string, string | undefined>;
   buildingId: number;
   markerPosition: THREE.Vector3;
+  rawCenter: { lat: number; lng: number };
+  floorCount: number;
 }
 
 function Building({
@@ -95,6 +104,8 @@ function Building({
   tags,
   buildingId,
   markerPosition,
+  rawCenter,
+  floorCount,
 }: BuildingProps) {
   const [hovered, setHovered] = useState(false);
   const [hoverPos, setHoverPos] = useState<THREE.Vector3 | null>(null);
@@ -105,6 +116,16 @@ function Building({
   const [annotationNotes, setAnnotationNotes] = useState("");
   const [annotationColor, setAnnotationColor] =
     useState<BuildingAnnotationColor>("red");
+  const [floors, setFloors] = useState<
+    { floor_number: number; floor_ulpin: string; flag: boolean }[]
+  >([]);
+  const [loadingFloors, setLoadingFloors] = useState(false);
+  const [buildingInfo, setBuildingInfo] = useState<{
+    dbId: number;
+    osmId: number;
+    parcelId: number;
+    baseUlpin: string;
+  } | null>(null);
 
   const toggleHidden = useHiddenStore((s) => s.toggleHidden);
   const selectedBuildingId = useHiddenStore((s) => s.selectedBuildingId);
@@ -119,6 +140,54 @@ function Building({
     (s) => s.removeAnnotation
   );
   const selected = selectedBuildingId === buildingId;
+
+  const handleBuildingClick = async () => {
+    const nextSelected = !selected;
+    selectBuilding(nextSelected ? buildingId : null);
+    if (!nextSelected) return;
+
+    setLoadingFloors(true);
+    const baseUlpin = generateBaseUlpin(rawCenter.lat, rawCenter.lng);
+
+    const parcel = await getOrCreateParcel(
+      baseUlpin,
+      rawCenter.lat,
+      rawCenter.lng
+    );
+
+    if (!parcel) {
+      setLoadingFloors(false);
+      return;
+    }
+
+    const building = await getOrCreateBuilding(
+      buildingId,
+      tags.name || "Unnamed Building",
+      floorCount,
+      parcel.id
+    );
+
+    if (building) {
+      setBuildingInfo({
+        dbId: building.id,
+        osmId: buildingId,
+        parcelId: parcel.id,
+        baseUlpin,
+      });
+      const flagged = checkHeightFloorMismatch(
+        extrudeSettings.depth,
+        floorCount
+      );
+      const floorRows = await getOrCreateFloors(
+        building.id,
+        baseUlpin,
+        floorCount,
+        flagged
+      );
+      setFloors(floorRows);
+    }
+    setLoadingFloors(false);
+  };
 
   const baseColor = getBuildingColor(tags);
   const displayColor =
@@ -205,7 +274,7 @@ function Building({
         e.stopPropagation();
       }}
       onClick={(e) => {
-        selectBuilding(selected ? null : buildingId);
+        handleBuildingClick();
         e.stopPropagation();
       }}
       onContextMenu={(e) => {
@@ -630,6 +699,90 @@ function Building({
                 }}
               >
                 No data available
+              </div>
+            )}
+
+            {/* Database identifiers */}
+            {buildingInfo && (
+              <div
+                style={{
+                  margin: "10px 0 2px",
+                  borderTop: "1px solid rgba(0, 0, 0, 0.08)",
+                  paddingTop: "8px",
+                  fontSize: "11px",
+                  color: "#5f6368",
+                  fontFamily: "monospace",
+                  lineHeight: 1.6,
+                }}
+              >
+                <div>DB Building ID: {buildingInfo.dbId}</div>
+                <div>OSM ID: {buildingInfo.osmId}</div>
+                <div>Parcel ID: {buildingInfo.parcelId}</div>
+                <div>Base ULPIN: {buildingInfo.baseUlpin}</div>
+              </div>
+            )}
+
+            {/* Floor ULPINs */}
+            {(loadingFloors || floors.length > 0) && (
+              <div
+                style={{
+                  margin: "10px 0 8px",
+                  borderTop: "1px solid rgba(0, 0, 0, 0.08)",
+                  paddingTop: "8px",
+                }}
+              >
+                <div
+                  style={{
+                    fontWeight: "500",
+                    marginBottom: "4px",
+                    color: "#5f6368",
+                  }}
+                >
+                  Floor IDs
+                </div>
+                {loadingFloors ? (
+                  <div style={{ fontSize: "12px", color: "#8f8f96" }}>
+                    Generating floor ULPINs...
+                  </div>
+                ) : (
+                  <div style={{ maxHeight: "120px", overflowY: "auto" }}>
+                    {floors[0]?.flag && (
+                      <div
+                        style={{
+                          fontSize: "11px",
+                          color: "#b45309",
+                          backgroundColor: "rgba(245, 158, 11, 0.1)",
+                          border: "1px solid rgba(245, 158, 11, 0.3)",
+                          borderRadius: "4px",
+                          padding: "4px 6px",
+                          marginBottom: "6px",
+                        }}
+                      >
+                        ⚠ Height and floor count don't closely match —
+                        flagged for review
+                      </div>
+                    )}
+                    {floors
+                      .slice()
+                      .sort((a, b) => a.floor_number - b.floor_number)
+                      .map((f) => (
+                        <div
+                          key={f.floor_number}
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            gap: "8px",
+                            fontSize: "11px",
+                            fontFamily: "monospace",
+                            margin: "2px 0",
+                          }}
+                        >
+                          <span>Floor {f.floor_number}</span>
+                          <span>{f.floor_ulpin}</span>
+                        </div>
+                      ))}
+                  </div>
+                )}
               </div>
             )}
 
@@ -1061,6 +1214,16 @@ export function Space() {
           bevelEnabled: false,
         };
 
+        const rawLat =
+          bld.geometry.reduce((sum, p) => sum + p.lat, 0) /
+          bld.geometry.length;
+        const rawLng =
+          bld.geometry.reduce((sum, p) => sum + p.lng, 0) /
+          bld.geometry.length;
+        const floorCount = !isNaN(heightLevels)
+          ? Math.round(heightLevels)
+          : Math.max(1, Math.round(heightValue / 3));
+
         result.push({
           shape,
           extrudeSettings,
@@ -1073,6 +1236,8 @@ export function Space() {
             -shapePoints.reduce((sum, point) => sum + point.y, 0) /
               shapePoints.length
           ),
+          rawCenter: { lat: rawLat, lng: rawLng },
+          floorCount,
         });
       }
     );
@@ -1103,6 +1268,8 @@ export function Space() {
             tags={item.tags}
             buildingId={item.buildingId}
             markerPosition={item.markerPosition}
+            rawCenter={item.rawCenter}
+            floorCount={item.floorCount}
           />
         )
       )}
