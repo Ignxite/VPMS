@@ -178,15 +178,24 @@ function App() {
     }
   };
 
+  // Automatically trigger building data fetch when entering Step 1 (Processing)
+  useEffect(() => {
+    if (
+      step === 1 &&
+      !hasFetchedBuildings &&
+      !isFetchingBuildings &&
+      areaData.length >= 2
+    ) {
+      requestBuildings();
+    }
+  }, [step, hasFetchedBuildings, isFetchingBuildings, areaData]);
+
   const handleClickNextStep = async () => {
     if (step === 0 && checkIsBig()) {
       setIsWarnModal(true);
       return;
     }
-    if (step === 1 && !hasFetchedBuildings) {
-      await requestBuildings();
-      return;
-    }
+    if (step === 1 && (isFetchingBuildings || !hasFetchedBuildings)) return;
     setStep(step + 1);
   };
 
@@ -274,8 +283,7 @@ function App() {
           <Column gap="0.5rem">
             <Title>Processing</Title>
             <Description>
-              Click Next Step to fetch building information. Once loaded, click
-              Next Step again to view the 3D scene.
+              Analyzing spatial boundaries and processing 3D building geometry for the selected region.
             </Description>
 
             <BuildingHeights
@@ -300,7 +308,11 @@ function App() {
 
             <NextButton
               isShow={step !== 2}
-              disabled={isNextButtonDisabled || isFetchingBuildings}
+              disabled={
+                isNextButtonDisabled ||
+                isFetchingBuildings ||
+                (step === 1 && !hasFetchedBuildings)
+              }
               onClick={handleClickNextStep}
             >
               {isFetchingBuildings ? (
